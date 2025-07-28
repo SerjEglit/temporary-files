@@ -1,59 +1,64 @@
 #!/bin/bash
 
-echo "🚀 Добро пожаловать в DevOps WSL-среду от ESNsey!"
-echo "🌐 Установка началась..."
+echo ""
+echo "🛠️ Начало установки: $(date)"
+echo ""
 
-# 1. Обновление системы
-sudo apt update && sudo apt upgrade -y
+# Путь к домашней директории
+HOME_DIR="$HOME"
 
-# 2. Установка необходимых пакетов
-sudo apt install -y zsh git curl wget unzip python3-pip net-tools
+# ---- ZSH и Powerlevel10k ----
+echo "🔧 Устанавливаю Zsh и Powerlevel10k..."
 
-# 3. Установка Oh My Zsh
-echo "⚙️ Установка Oh My Zsh..."
-export RUNZSH=no
-export CHSH=no
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Установка zsh
+sudo apt update
+sudo apt install -y zsh curl git wget fonts-powerline
 
-# 4. Установка Powerlevel10k
-echo "🎨 Установка Powerlevel10k..."
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
-
-# 5. Подключение темы Powerlevel10k в .zshrc
-sed -i 's|^ZSH_THEME=.*|ZSH_THEME="powerlevel10k/powerlevel10k"|' ~/.zshrc
-
-# 6. Скачать кастомную конфигурацию Powerlevel10k от ESNsey
-echo "🧠 Кастомизация Powerlevel10k от ESNsey..."
-curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.p10k.zsh -o ~/.p10k.zsh
-
-# Добавим в .zshrc строку, если её ещё нет
-if ! grep -q '[ -f ~/.p10k.zsh ]' ~/.zshrc; then
-    echo '[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh' >> ~/.zshrc
+# Установка oh-my-zsh
+if [ ! -d "$HOME_DIR/.oh-my-zsh" ]; then
+    echo "📦 Устанавливаю Oh My Zsh..."
+    RUNZSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+else
+    echo "✅ oh-my-zsh уже установлен."
 fi
 
-# 7. Скачать скрипт VPN-подключения от ESNsey
-echo "🔐 Установка скрипта VPN Gate..."
-mkdir -p ~/scripts
-curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/connect_vpngate.py -o ~/scripts/connect_vpngate.py
-chmod +x ~/scripts/connect_vpngate.py
-
-# 8. Добавим alias для запуска VPN-скрипта
-if ! grep -q 'connect_vpn' ~/.zshrc; then
-    echo 'alias connect_vpn="python3 ~/scripts/connect_vpngate.py"' >> ~/.zshrc
+# Установка Powerlevel10k
+if [ ! -d "$HOME_DIR/.oh-my-zsh/custom/themes/powerlevel10k" ]; then
+    echo "📦 Устанавливаю Powerlevel10k..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+        "$HOME_DIR/.oh-my-zsh/custom/themes/powerlevel10k"
+else
+    echo "✅ Powerlevel10k уже установлена."
 fi
 
-# 9. Установим Python-зависимости
-echo "🐍 Установка зависимостей Python..."
-pip3 install --user requests beautifulsoup4
+# ---- Конфигурация Powerlevel10k ----
+echo "📄 Устанавливаю .p10k.zsh..."
+wget -q https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.p10k.zsh -O "$HOME_DIR/.p10k.zsh" || echo "⚠️ Не удалось загрузить .p10k.zsh"
 
-# 10. Изменим оболочку на zsh
-echo "🐚 Установка zsh как основной оболочки..."
-chsh -s $(which zsh)
+# ---- .zshrc настройка ----
+echo "🔧 Настраиваю .zshrc..."
+wget -q https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.zshrc -O "$HOME_DIR/.zshrc"
 
-# 11. Завершение
+# ---- Aliases и полезные скрипты ----
+echo "📡 Устанавливаю connect_vpngate.py..."
+wget -q https://raw.githubusercontent.com/SerjEglit/temporary-files/main/connect_vpngate.py -O "$HOME_DIR/connect_vpngate.py"
+chmod +x "$HOME_DIR/connect_vpngate.py"
+
+# ---- Финальное сообщение ----
 echo ""
-echo "✅ Установка завершена!"
-echo "💡 Перезапусти терминал или введи команду: zsh"
-echo "🔧 При первом запуске Powerlevel10k ты можешь вручную донастроить стиль, или он уже применится из .p10k.zsh"
-echo ""
-echo "— С уважением, ESNsey"
+cat <<'EOF'
+╭────────────────────────────────────────────────────────────╮
+│        🚀 Добро пожаловать в DevOps WSL-среду от ESNsey        │
+│  🔧 Автоматизация. 🧠 Умные алиасы. ⚙️ Инфра как код.        │
+│       🌐 ZSH • Python • Docker • K8s • Git • Cloud          │
+╰────────────────────────────────────────────────────────────╯
+🖋 Автор: Архитектор ESNsey | GitHub: https://github.com/SerjEglit
+📦 Zsh        : $(zsh --version)
+🐍 Python     : $(python3 --version)
+🟢 Node.js    : $(node --version 2>/dev/null || echo "не установлен")
+📅 Дата       : $(date)
+
+🎉 Установка завершена! Перезапустите терминал или выполните:
+
+  exec zsh
+EOF
