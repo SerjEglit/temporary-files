@@ -1,36 +1,17 @@
 #!/bin/bash
-echo "🛠️ Начинаю удаление среды ESNsey DevOps WSL: $(date)"
 
-# Удаляем oh-my-zsh
-if [ -d "$HOME/.oh-my-zsh" ]; then
-  echo "Удаляю oh-my-zsh..."
-  rm -rf "$HOME/.oh-my-zsh"
-else
-  echo "oh-my-zsh не найден."
-fi
+echo "🛠️ Удаление DevOps-среды ESNSey: $(date)"
 
-# Удаляем powerlevel10k
-if [ -d "$HOME/.powerlevel10k" ]; then
-  echo "Удаляю Powerlevel10k..."
-  rm -rf "$HOME/.powerlevel10k"
-fi
+echo "Удаляем oh-my-zsh..."
+rm -rf ~/.oh-my-zsh
 
-# Удаляем zsh конфиги
-echo "Удаляю конфигурационные файлы zsh..."
-rm -f "$HOME/.zshrc" "$HOME/.p10k.zsh" "$HOME/.zsh_aliases"
+echo "Удаляем Powerlevel10k..."
+rm -rf "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 
-# Удаляем connect_vpngate.py
-if [ -f "$HOME/connect_vpngate.py" ]; then
-  echo "Удаляю connect_vpngate.py..."
-  rm -f "$HOME/connect_vpngate.py"
-fi
+echo "Удаляем конфиги .zshrc, .p10k.zsh, ascii.txt и connect_vpngate.py..."
+rm -f ~/.zshrc ~/.p10k.zsh ~/ascii.txt ~/connect_vpngate.py ~/connect_vpngate.log
 
-# Очищаем zsh из системных оболочек (если нужно)
-if command -v chsh >/dev/null 2>&1; then
-  echo "Возвращаю оболочку по умолчанию (bash)..."
-  chsh -s /bin/bash
-fi
+echo "Удаляем логи и фоновые процессы..."
+pkill -f connect_vpngate.py
 
-echo "✅ Удаление завершено. Рекомендуется перезапустить терминал."
-
-exit 0
+echo "✅ Среда ESNSey полностью удалена."
