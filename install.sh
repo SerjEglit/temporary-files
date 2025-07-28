@@ -1,63 +1,75 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-echo -e "\n🛠️ Начало установки: $(date)\n"
+echo "🛠️ Начинаем установку DevOps-среды ESNSey: $(date)"
 
-### === УСТАНОВКА ZSH + POWERLEVEL10K === ###
-echo -e "🔧 Устанавливаю Zsh и Powerlevel10k..."
+# Проверка и установка Zsh
+if ! command -v zsh &>/dev/null; then
+  echo "🔧 Устанавливаем Zsh..."
+  sudo apt update && sudo apt install -y zsh curl git
+else
+  echo "✅ Zsh уже установлен."
+fi
 
-# Установка zsh
-sudo apt update && sudo apt install -y zsh curl git
-
-# Установка oh-my-zsh
+# Установка Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  echo "🔧 Устанавливаем Oh My Zsh..."
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
-  echo "✅ oh-my-zsh уже установлен."
+  echo "✅ Oh My Zsh уже установлен."
 fi
 
-# Установка powerlevel10k
+# Установка Powerlevel10k
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
+  echo "🔧 Устанавливаем Powerlevel10k..."
   git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-    ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+    "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 else
-  echo "✅ Powerlevel10k уже установлена."
+  echo "✅ Powerlevel10k уже установлен."
 fi
 
-### === КОНФИГ ZSH === ###
-echo "📄 Устанавливаю .p10k.zsh..."
-curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.p10k.zsh -o ~/.p10k.zsh || echo "⚠️ .p10k.zsh не найден."
+# Установка .p10k.zsh из репозитория
+echo "📄 Загружаем конфиг .p10k.zsh..."
+curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.p10k.zsh -o ~/.p10k.zsh \
+  && echo "✅ Конфиг .p10k.zsh установлен." || echo "❌ Ошибка загрузки .p10k.zsh"
 
-echo "🔧 Настраиваю .zshrc..."
-curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/.zshrc -o ~/.zshrc || echo "⚠️ .zshrc не найден."
+# Установка connect_vpngate.py с логированием и обработкой ошибок
+echo "📡 Устанавливаем connect_vpngate.py..."
+curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/connect_vpngate.py -o ~/connect_vpngate.py \
+  && chmod +x ~/connect_vpngate.py && echo "✅ connect_vpngate.py установлен." || echo "❌ Ошибка загрузки connect_vpngate.py"
 
-### === VPN-СКРИПТ === ###
-echo "📡 Устанавливаю connect_vpngate.py..."
-curl -fsSL https://raw.githubusercontent.com/SerjEglit/temporary-files/main/connect_vpngate.py -o ~/connect_vpngate.py || echo "⚠️ Скрипт VPN не найден."
-chmod +x ~/connect_vpngate.py
+# Настройка .zshrc с включением Powerlevel10k и вызовом ascii-приветствия
+echo "🔧 Настраиваем .zshrc..."
+cat > ~/.zshrc << 'EOF'
+# ESNSey DevOps WSL Environment .zshrc
 
-### === DOCKER WSL CONFIG (если надо) === ###
-echo "🐳 Настраиваю Docker + WSL интеграцию..."
-sudo apt install -y docker.io docker-compose
-sudo usermod -aG docker $USER
+# Локализация
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
-# WSL-specific настройка
-echo -e "[wsl2]\nmemory=4GB\nprocessors=2" | sudo tee /etc/wsl.conf > /dev/null
+# Oh My Zsh
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="powerlevel10k/powerlevel10k"
+plugins=(git docker docker-compose zsh-autosuggestions zsh-syntax-highlighting)
 
-### === ASCII-ПРИВЕТСТВИЕ === ###
-cat <<'EOF'
+source $ZSH/oh-my-zsh.sh
 
-╭────────────────────────────────────────────────────────────╮
-│        🚀 Добро пожаловать в DevOps WSL-среду от ESNsey        │
-│  🔧 Автоматизация. 🧠 Умные алиасы. ⚙️ Инфра как код.        │
-│       🌐 ZSH • Python • Docker • K8s • Git • Cloud          │
-╰────────────────────────────────────────────────────────────╯
+# Загружаем конфиг Powerlevel10k
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
-             ╔════════════════════════════════════╗
-             ║    🏗️ Архитектор системы: ESNsey    ║
-             ╚════════════════════════════════════╝
+# Приветствие с ASCII-артом ESNSey
+if [[ $- == *i* ]]; then
+  cat ~/ascii.txt
+  echo "🎨 Архитектор ESNSey активен. Используйте терминал с мудростью."
+fi
+
+# Автозапуск connect_vpngate.py в фоне с логированием
+if ! pgrep -f "connect_vpngate.py" > /dev/null; then
+  nohup ~/connect_vpngate.py >> ~/connect_vpngate.log 2>&1 &
+fi
 
 EOF
 
-### === ИТОГ === ###
-echo -e "\n✅ Установка завершена. Перезапустите терминал или выполните:"
-echo -e "\n  \033[1;32mexec zsh\033[0m\n"
+echo "✅ .zshrc настроен."
+
+echo "🎉 Установка завершена. Перезапустите терминал или выполните: exec zsh"
+
